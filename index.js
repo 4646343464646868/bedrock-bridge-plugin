@@ -23,12 +23,33 @@ function resolveServer(nameOrHost, port){const servers=loadServers();const e=ser
 export const name = 'bedrock-bridge'
 export const inject = ['tools']
 
+// ---- DSH 原生设置页 Config（volatile 字段才会出现在「设置→插件→bedrock-bridge」）----
+// schemastery 是 optional peer，多路径兜底加载；拿不到就不导出 Config（避免 cordis 校验报错）。
+let _z = null
+for (const spec of [
+  '@deepseek-ai/schemastery',
+  '/opt/node-v22.23.2-linux-arm64/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/schemastery/lib/index.mjs',
+]) {
+  try { const m = await import(spec); _z = m.default || m; if (_z && _z.object) break } catch {}
+}
+export const Config = _z && _z.object ? _z.object({
+  defaultServer: _z.string().default('').volatile(),
+  defaultUser: _z.string().default('DeepSeek').volatile(),
+  heartbeatMs: _z.number().default(15000).volatile(),
+  autoRegister: _z.boolean().default(true).volatile(),
+  fallbackVersion: _z.string().default('').volatile(),
+}) : undefined
+
 const outText = (render) => ({
   schema: { type:'object', properties:{}, additionalProperties:true },
   render: (a, v) => [{ type:'text', text: render ? render(a, v) : (v?.text ?? JSON.stringify(v, null, 2)) }],
 })
 
-export function apply (ctx) {
+export function apply (ctx, config = {}) {
+  // 设置页配置读取（volatile 字段是引用，用 .get()；没配置时用默认）
+  const cfg = (key, dflt) => {
+    try { const v = config?.[key]; if (v == null) return dflt; return typeof v.get === 'function' ? v.get() : v } catch { return dflt }
+  }
   const sessions = new Map() // agentId -> { mc, engine, log, msgs }
 
   const getS = (exec) => {
@@ -52,12 +73,12 @@ export function apply (ctx) {
       if (s.engine) s.engine.close()
       const r = resolveServer(a.host, Number(a.port))
       const host = r.host, port = Number(a.port)||r.port||19132
-      const user = a.user||r.user||'DeepSeek', password = a.password||r.password||null
+      const user = a.user||r.user||cfg('defaultUser','DeepSeek'), password = a.password||r.password||null
       s.log = []; s.msgs = []
       const engine = await connectBedrock({
-        host, port, user, password, register:a.register!==false,
+        host, port, user, password, register: a.register !== undefined ? a.register : cfg('autoRegister',true),
         log:m=>{s.log.push(String(m))}, onMessage:m=>{s.msgs.push(m)},
-        holdMs:30*60*1000,
+        holdMs: Math.max(60000, cfg('heartbeatMs',15000) * 120),
       }, chunkLib, nbtLib)
       const { fake } = makeFakeBot(engine, { user, gamemode:a.gamemode })
       s.mc.bot = fake
