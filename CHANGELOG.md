@@ -1,5 +1,12 @@
 # 更新日志
 
+## 1.4.1（验收通过）
+- **高版本基岩连接实测通过**：play.simpfun.cn:14255（BDS/LLBDS 1.20.61 协议649）6-7 秒 JOINED，alive 稳定，x/z 坐标正确，eid=22。
+- 关键修复见 1.4.0 的"游戏包直通补丁"（jsp-raknet 吞掉 state=1 后首字节<0x80 的游戏包 → network_settings 到不了协议层）。
+- start_game 字段适配 1.20.61（player_position/runtime_entity_id）；eid BigInt→Number。
+- y 坐标读到 32769 是服务端发的占位值（0x7FFF），非插件 bug；客户端会自行落地。
+- 删掉错误的压缩帧头预置（它反而破坏库自身的压缩协商）。
+
 ## 1.4.0
 - **【真凶修复】版本自动探测**：之前 `skipPing:true` 又没传 version，库静默用 1.26.60/协议2225 去连（如 649 的 BDS 1.20.61），服务端完全静默不回 network_settings——这就是一直卡住的真正原因（本地闭环实测：版本一致三种全通、不一致即静默）。新增 `lib/probeBedrock.mjs`：裸 RakNet ping 拿 PONG→协议号→反查库全版本表（55 个版本 1.16~1.26）自动选 version；探测失败改用 PONG 自带版本串，再失败才报错，**不再硬编码 1.26.60**。
 - **RakNet 协议号运行时 patch**：新增 `lib/raknetPatch.mjs`，>=1.19.30 的服运行时把 jsp-raknet 的 RakNet 协议 10→11（幂等 monkey-patch OpenConnectionRequest1.encode），不手改 node_modules、可进 git；引擎强制 `useRaknetWorkers:false`（否则 worker 加载未 patch 的模块）。

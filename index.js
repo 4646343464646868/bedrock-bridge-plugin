@@ -133,6 +133,30 @@ export function apply (ctx, config = {}) {
         log:(s.log||[]).slice(-12), messages:(s.msgs||[]).slice(-8) }
     })
 
+  // 高版本基岩真·放方块（在已连的 bed_connect_new 会话上）
+  reg('bed_place_new', '在高版本基岩服放置方块（真发 inventory_transaction）。block_position 是被点击的方块，face 是面(1=顶面)。',
+    { x:{type:'number',required:true}, y:{type:'number',required:true}, z:{type:'number',required:true}, name:{type:'string',description:'stone/dirt/oak_planks 等'}, face:{type:'number',description:'面 0-5，默认1顶面'} },
+    async (a, e, s) => {
+      if (!s.engine || typeof s.engine.placeBlock !== 'function') throw new Error('当前不是高版本基岩连接，请先 bed_connect_new。')
+      return s.engine.placeBlock(a.name || 'stone', { x:a.x, y:a.y, z:a.z }, a.face==null?1:a.face)
+    })
+
+  // 盖房子：以 clicked 为地面左上角，铺 w×d 的墙/地板，逐格真放
+  reg('bed_build_new', '高版本基岩批量盖房/铺方块：从 (x,y,z) 起按 w×d×h 用 name 真放（block_position=被点方块，放在其顶面）。',
+    { x:{type:'number',required:true}, y:{type:'number',required:true}, z:{type:'number',required:true}, w:{type:'number',description:'宽x方向'}, d:{type:'number',description:'深z方向'}, h:{type:'number',description:'高'}, name:{type:'string'}, max:{type:'number'} },
+    async (a, e, s) => {
+      if (!s.engine || typeof s.engine.placeBlock !== 'function') throw new Error('当前不是高版本基岩连接，请先 bed_connect_new。')
+      const w=Math.max(1,Math.min(a.w||3,16)), d=Math.max(1,Math.min(a.d||3,16)), h=Math.max(1,Math.min(a.h||1,8)), cap=a.max||64
+      const placed=[]; let n=0
+      for(let dy=0;dy<h;dy++)for(let dx=0;dx<w;dx++)for(let dz=0;dz<d;dz++){
+        if(n++>=cap)break
+        const r=s.engine.placeBlock(a.name||'stone',{x:a.x+dx,y:a.y+dy,z:a.z+dz},1)
+        if(r&&r.ok)placed.push(`${a.x+dx},${a.y+dy+1},${a.z+dz}`)
+        await new Promise(r=>setTimeout(r,80))
+      }
+      return { ok:true, placed:placed.length, positions:placed.slice(0,30) }
+    })
+
   reg('bed_status','查看当前基岩角色状态：是否在线、坐标、朝向、服务器、血量、背包等。', {},
     async (a,e,s)=>({ ...need(s).status(), log:s.log.slice(-5) }))
 
