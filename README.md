@@ -46,6 +46,11 @@ bed_connect { host:'我的服' }
 - 区块 `0xbf`：16×16×128，COLUMNS/LAYERED 两种布局，紧凑 Uint8Array 存储
 - 方块实体 `0xbd`：LE 字节序 NBT，木牌 Text1-4 / 箱子 Items
 
+## 设置页 / 对话预设
+
+- **原生设置页**：DSH「设置 → 插件 → bedrock-bridge」会自动出现一页，可配置 defaultServer / defaultUser / heartbeatMs / autoRegister / fallbackVersion（插件导出 schemastery Config，字段带 .volatile()，改完自动写回 profile patch）。
+- **对话预设**：profile 的 cordis.patch.yml 里注册了 mc（=MC模式）/ mcplus（=MC+）两个预设，whale_craft 的 mcModePresets/mcPlusPresets 名单也加入了这两个 id。会话下拉选它们即进入对应模式。预设/名单在插件仓库之外，重启 DSH 生效。
+
 ## 安装
 
 这是一个 cordis bundle，用 `plugin_manager install_bundle` 安装本目录。
