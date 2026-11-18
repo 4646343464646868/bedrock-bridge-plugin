@@ -157,6 +157,36 @@ export function apply (ctx, config = {}) {
       return { ok:true, placed:placed.length, positions:placed.slice(0,30) }
     })
 
+  reg('bed_dig_new', '高版本基岩挖方块：player_action start_break→crack_break→stop_break。',
+    { x:{type:'number',required:true}, y:{type:'number',required:true}, z:{type:'number',required:true}, progress:{type:'number',description:'破坏进度 tick 数'} },
+    async (a, e, s) => {
+      if (!s.engine || typeof s.engine.digBlock !== 'function') throw new Error('当前不是高版本基岩连接，请先 bed_connect_new。')
+      return s.engine.digBlock({ x:a.x, y:a.y, z:a.z }, { progress:a.progress||5 })
+    })
+
+  reg('bed_command_new', '高版本基岩执行游戏内命令（command_request 包，非聊天框）。',
+    { command:{type:'string',required:true,description:'命令，带或不带 / 都行'} },
+    async (a, e, s) => {
+      if (!s.engine || typeof s.engine.runCommand !== 'function') throw new Error('当前不是高版本基岩连接，请先 bed_connect_new。')
+      return s.engine.runCommand(a.command)
+    })
+
+  reg('bed_craft_new', '高版本基岩合成物品（item_stack_request + craft_recipe）。需要先 bed_connect_new 进服拿到配方。',
+    { recipe_id:{type:'number',required:true,description:'配方网络 ID（从 bed_recipes_new 获取）'}, count:{type:'number',description:'合成数量'} },
+    async (a, e, s) => {
+      if (!s.engine || typeof s.engine.craft !== 'function') throw new Error('当前不是高版本基岩连接，请先 bed_connect_new。')
+      return s.engine.craft(a.recipe_id, a.count||1)
+    })
+
+  reg('bed_recipes_new', '高版本基岩列出可用合成配方（从 crafting_data 缓存）。',
+    { keyword:{type:'string',description:'按关键词过滤'} },
+    async (a, e, s) => {
+      if (!s.engine || typeof s.engine.listRecipes !== 'function') throw new Error('当前不是高版本基岩连接，请先 bed_connect_new。')
+      const all = s.engine.listRecipes()
+      const filtered = a.keyword ? all.filter(r => JSON.stringify(r).includes(a.keyword)) : all
+      return { total: all.length, shown: filtered.slice(0, 50), filtered: filtered.length }
+    })
+
   reg('bed_status','查看当前基岩角色状态：是否在线、坐标、朝向、服务器、血量、背包等。', {},
     async (a,e,s)=>({ ...need(s).status(), log:s.log.slice(-5) }))
 
