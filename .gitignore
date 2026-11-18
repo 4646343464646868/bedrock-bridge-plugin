@@ -1,0 +1,8 @@
+node_modules/
+*.log
+bedrock-bridge.log
+.DS_Store
+
+# 含真实密码的本地配置，不进 git；用 servers.example.json 作模板
+servers.json
+backups/
