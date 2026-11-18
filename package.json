@@ -1,15 +1,39 @@
 {
   "name": "@local/bedrock-bridge",
-  "version": "1.4.1",
-  "private": true,
+  "version": "1.4.2",
+  "description": "Minecraft Bedrock bridge plugin for DSH - connects MCPE 0.14 & 1.20.x+ bedrock servers with full bed_* tools",
+  "main": "index.js",
   "type": "module",
   "exports": {
     ".": "./index.js",
     "./locale/*.json": "./locale/*.json",
     "./icon": "./icon.svg"
   },
-  "files": ["index.js", "cordis.patch.yml", "lib/*.mjs", "locale/*.json", "icon.svg"],
+  "files": [
+    "index.js",
+    "cordis.patch.yml",
+    "lib/*.mjs",
+    "locale/*.json",
+    "icon.svg"
+  ],
+  "keywords": [
+    "minecraft",
+    "bedrock",
+    "mcpe",
+    "bridge",
+    "dsh",
+    "plugin",
+    "raknet",
+    "protocol"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/4646343464646868/bedrock-bridge-plugin.git"
+  },
   "dsh": {
-    "bundle": { "patch": "./cordis.patch.yml" }
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
   }
 }
